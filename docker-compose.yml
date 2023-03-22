@@ -1,0 +1,62 @@
+version: "3.7"
+
+services:
+  gateway:
+    container_name: gateway
+    build:
+      context: ./microservices/gateway
+      dockerfile: Dockerfile
+    volumes:
+      - ./microservices/gateway:/usr/src/app
+    ports:
+      - "3000:3000"
+    depends_on:
+      - rabbitmq
+    working_dir: /usr/src/app
+    restart: unless-stopped
+
+  user:
+    container_name: user
+    build:
+      context: ./microservices/user
+      dockerfile: Dockerfile
+    volumes:
+      - ./microservices/user:/usr/src/app
+    depends_on:
+      - rabbitmq
+      - mongo
+    working_dir: /usr/src/app
+    restart: unless-stopped
+
+  cache:
+    container_name: cache
+    build:
+      context: ./microservices/cache
+      dockerfile: Dockerfile
+    volumes:
+      - ./microservices/cache:/usr/src/app
+    depends_on:
+      - rabbitmq
+    working_dir: /usr/src/app
+    restart: unless-stopped
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    hostname: rabbitmq
+    volumes:
+      - /var/lib/rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    env_file:
+      - ./rabbitmq.env
+
+  mongo:
+    image: mongo:latest
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
+      MONGO_INITDB_DATABASE: ${MONGO_DATABASE}
+    ports:
+      - '27017:27017'
